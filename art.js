@@ -206,10 +206,19 @@ function drawHazard(h){
   const x=q.x+14,y=q.y+14;glow(x,y,30,'#e698c02d');circle(x,y,12,waGradient(x,y-12,x,y+12,['#ddc0f5','#956fa8','#493c75']));
   ctx.strokeStyle='#f2d3ef8c';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x,y,19,5,-.35,0,Math.PI*2);ctx.stroke();circle(x-3,y-4,2.2,'#f8dcee');
  }else{
-  const count=Math.max(3,Math.floor(q.w/12)),color=h.kind==='thorns'?'#759d88':h.kind==='crystal'?'#b1cad9':'#b5a3b1';
+  const count=Math.max(3,Math.round(q.w/20));
+  const color=h.kind==='thorns'?'#ff99bf':h.kind==='crystal'?'#91f1ff':'#ffd78c';
+  const middle=h.kind==='thorns'?'#a64276':h.kind==='crystal'?'#4287af':'#c17b4b';
+  // A dark bed, a pale silhouette and wider teeth stay legible on phone screens.
+  glow(q.x+q.w/2,base-10,q.w*.7,color+'25');
+  rounded(q.x-5,base-5,q.w+10,8,3,'#291d34');
+  line(q.x-3,base+1,q.x+q.w+3,base+1,middle,2.5);
+  ctx.lineJoin='round';ctx.lineWidth=2.5;ctx.strokeStyle='#2b1c32';
   for(let i=0;i<count;i++){
-   const x=q.x+q.w*i/count,ww=q.w/count;ctx.fillStyle=waGradient(x,q.y,x,base,[color,h.kind==='thorns'?'#35544e':'#51405d']);
-   ctx.beginPath();ctx.moveTo(x,base);ctx.quadraticCurveTo(x+ww*.4,q.y+4,x+ww*.5,q.y);ctx.quadraticCurveTo(x+ww*.65,q.y+4,x+ww,base);ctx.closePath();ctx.fill();line(x+ww*.5,q.y+4,x+ww*.7,base-2,color+'aa',.8);
+   const x=q.x+q.w*i/count,ww=q.w/count;ctx.fillStyle=waGradient(x,q.y,x,base,['#fff9e7',color,middle]);
+   ctx.beginPath();ctx.moveTo(x+.5,base);ctx.lineTo(x+ww*.5,q.y);ctx.lineTo(x+ww-.5,base);ctx.closePath();ctx.fill();ctx.stroke();
+   line(x+ww*.5,q.y+3,x+ww*.23,base-5,'#fff8e9',2);
+   if(h.kind==='thorns')line(x+ww*.7,q.y+q.h*.56,x+ww*.92,q.y+q.h*.43,color,2);
   }
  }
  ctx.restore();

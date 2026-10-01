@@ -37,7 +37,7 @@ function makeStage(source,index){
  for(let i=0;i<5;i++){
   const [x,y,w]=ground[i];
   if(i===0&&index%3===0)continue;
-  hazards.push({kind:source.theme==='inferno'?'vent':worldIndex===2?'crystal':source.theme==='forest'?'thorns':'spikes',x:x+w-155,y:y-18,w:44+(difficulty-5)*8,h:18,period:3.7,phase:i*.63});
+  hazards.push({kind:source.theme==='inferno'?'vent':worldIndex===2?'crystal':source.theme==='forest'?'thorns':'spikes',x:x+w-155,y:y-30,w:60+(difficulty-5)*8,h:30,period:3.7,phase:i*.63});
   if(i>0&&difficulty>=6)hazards.push({kind:worldIndex===2?'orbit':'vent',x:x+95,y:y-85,w:28,h:85,period:4.5,phase:i*.81});
  }
  return {width:cursor,ground,platforms,checkpoints:[[ground[2][0]+70,ground[2][1]],[ground[4][0]+65,ground[4][1]]],enemies,hazards,powerups:[[260,478],[ground[3][0]+65,ground[3][1]-42]],key:[last[0]+350,280],exit:cursor-130,portal:ground[1][0]+210,returnX:ground[2][0]+90,difficulty,worldIndex,localStage:index%3};
@@ -46,11 +46,11 @@ const MAIN_LEVELS=STAGE_LAYOUTS.map(makeStage);
 window.CAMPAIGN_LENGTH=9;
 window.createWorld=(hero,stage)=>{
  const source=MAIN_LEVELS[stage],style=STAGE_LAYOUTS[stage],day=hero==='moon';
- return {...structuredClone(source),id:'main',day:stage>=3?false:day,theme:style.theme,name:`WORLD ${source.worldIndex+1} · ${source.localStage+1}/3 · ${style.names[day?1:0]}`,subtitle:`${WORLD_TITLES[source.worldIndex]} · difficulty ${source.difficulty}/10. Find the key. Boost over the gaps.`,key:{x:source.key[0],y:source.key[1],w:28,h:28,got:false},portals:[{x:source.portal,y:source.ground[1][1],kind:day?'cloud':'blackhole',label:day?'JUMP INTO THE CLOUD ↑':'DOWN · VOID PATH',returnX:source.returnX}],spawn:[80,520],final:false};
+ return {...structuredClone(source),id:'main',day:stage>=3?false:day,theme:style.theme,name:`WORLD ${source.worldIndex+1} · ${source.localStage+1}/3 · ${style.names[day?1:0]}`,subtitle:`${WORLD_TITLES[source.worldIndex]} · difficulty ${source.difficulty}/10. Find the key. Boost over the gaps.`,key:{x:source.key[0],y:source.key[1],w:28,h:28,got:false},portals:[{x:source.portal+(day?0:24),y:source.ground[1][1],kind:day?'cloud':'blackhole',label:day?'JUMP INTO THE CLOUD ↑':'JUMP INTO THE HOLE ↓',returnX:source.returnX}],spawn:[80,520],final:false};
 };
 window.createBonus=(hero,stage)=>{
  const day=hero==='moon';return {id:'bonus',day,theme:day?'clouds':'void',name:day?'Above the clouds':'The Weeping Below',subtitle:day?'A hidden path above the world.':'The walls are alive. Violet slime slows your steps.',width:2450,ground:[[0,520,540],[780,490,510],[1560,520,420],[2200,520,250]],platforms:[[310,405,120],[1000,380,125],[1770,410,130]],checkpoints:[[850,490],[1650,520]],enemies:[[1080,490,'hopper'],[1260,255,day?'drone':'bat'],[1830,520,'crawler']],hazards:[],powerups:[[380,478],[1100,448]],key:null,exit:null,portals:[{x:2310,y:520,kind:'return',label:'RETURN TO THE TRAIL'}],spawn:[90,520],final:false,worldIndex:Math.floor(stage/3),localStage:stage%3,difficulty:5+stage%3};
 };
 window.createBossWorld=(phase,index=0)=>{
- const b=BOSS_DEFS[index];return {id:'boss',day:false,theme:b.theme,name:`WORLD ${index+1} BOSS · ${b.name}${index===0&&phase===2?' · Inferno':''}`,subtitle:index===0?(phase===1?'Four head stomps. Dodge flames, rushes and smash waves.':'Double jump unlocked! Release jump, then jump again in the air.'):index===1?'Six head stomps. Tap LIGHT / X repeatedly to break free of the mist.':'Eight head stomps. Dodge poison, darts and the marked tentacle strikes.',width:1550,ground:[[0,520,1550]],platforms:[[250,405,130],[645,365,135],[1120,405,130]],checkpoints:[],enemies:[],hazards:[],powerups:[[140,478]],key:null,exit:null,portals:[],spawn:[90,520],final:false,bossPhase:phase,bossIndex:index,worldIndex:index,localStage:3,difficulty:7+index};
+ const b=BOSS_DEFS[index];return {id:'boss',day:false,theme:b.theme,name:`WORLD ${index+1} BOSS · ${b.name}${index===0&&phase===2?' · Inferno':''}`,subtitle:index===0?(phase===1?'Four head stomps. Dodge flames, rushes and smash waves.':'Double jump unlocked! Release jump, then jump again in the air.'):index===1?'Six head stomps. Tap MAGIC / X repeatedly to break free of the mist.':'Eight head stomps. Dodge poison, darts and the marked tentacle strikes.',width:1550,ground:[[0,520,1550]],platforms:[[250,405,130],[645,365,135],[1120,405,130]],checkpoints:[],enemies:[],hazards:[],powerups:[[140,478]],key:null,exit:null,portals:[],spawn:[90,520],final:false,bossPhase:phase,bossIndex:index,worldIndex:index,localStage:3,difficulty:7+index};
 };

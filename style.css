@@ -19,3 +19,54 @@ header{padding:18px 24px;background:linear-gradient(#091326ba,transparent);align
 @media(max-height:500px){header{padding:11px 16px}#toast{top:60px}#choices canvas{width:65px;height:65px}.help{font-size:8px!important}.card{padding:15px 24px}}
 
 #choices button:disabled{opacity:.45;cursor:wait;transform:none}#toast{white-space:normal;text-align:center}#portal-hint{pointer-events:auto}
+
+/* A landscape playfield above a measured, two-thumb control shelf. */
+#game{touch-action:none;-webkit-user-select:none}
+.mobile-help{display:none}
+#portal-hint{pointer-events:none;padding:8px 14px}
+#orientation{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 30%,#293552,#080e21 75%);text-align:center}
+.orientation-card{max-width:340px}
+.rotate-phone{margin-bottom:14px;filter:drop-shadow(0 0 18px #e9c48c22)}
+.orientation-card h2{font:36px/1.15 Georgia,serif;margin:12px 0 18px}
+.orientation-card h2 em{font-weight:normal;color:#e9c48c}
+.orientation-card>p:not(.eyebrow){font-size:13px;line-height:1.8;color:#bbc6df}
+#orientation-full{min-height:48px;margin-top:15px;padding:12px 24px;border-radius:30px;border:1px solid #e9c48c66;background:#e9c48c18}
+.portrait-locked>header,.portrait-locked>#touch,.portrait-locked>#portal-hint{visibility:hidden}
+@media(pointer:coarse),(max-width:700px){
+ #touch{height:calc(clamp(124px,32dvh,156px) + env(safe-area-inset-bottom));padding:6px max(24px,env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));align-items:center;pointer-events:none;background:linear-gradient(#08122208,#081222e0 32%,#081222);border-top:1px solid #c9d8ea10;z-index:2}
+ #stick{width:clamp(90px,24dvh,112px);height:clamp(90px,24dvh,112px);flex-shrink:0;pointer-events:auto;background:#e9c98e09;border-color:#e9c98e70;box-shadow:inset 0 0 26px #e9c98e07}
+ #knob{width:43%;height:43%;left:28.5%;top:28.5%;border-color:#efd4a0;background:radial-gradient(circle at 35% 25%,#ebd7a866,#b58c4a33);box-shadow:0 0 18px #e9c98e12}
+ .cross{inset:18%;background:linear-gradient(90deg,transparent 49%,#e9c98e25 50%,transparent 51%),linear-gradient(transparent 49%,#e9c98e25 50%,transparent 51%);pointer-events:none}
+ #stick>span{bottom:-13px;font-size:8px;letter-spacing:2px;pointer-events:none}
+ .actions{align-items:flex-end;gap:16px;pointer-events:none}
+ .secondary{flex-direction:column;gap:10px}
+ .actions button{pointer-events:auto;touch-action:none;-webkit-user-select:none;width:82px;height:82px;font-size:38px;background:#152637e8;border-color:#b7dde587;transition:background .08s,box-shadow .08s}
+ .actions #boost,.actions #pulse{width:49px;height:49px;margin:0;font-size:29px}
+ .actions #pulse{color:#e9c98e;border-color:#e9c98e80}
+ .actions #pulse svg{pointer-events:none;width:29px;height:29px;vertical-align:middle}
+ .actions button small{inset:auto 0 -13px;font-size:8px;letter-spacing:1.4px;pointer-events:none}
+ .actions #pulse small{inset:auto 0 3px;font-size:6px;letter-spacing:1px}
+ .actions #pulse svg{margin-top:-8px}
+ .actions button.active{background:#e9c98e35;box-shadow:0 0 23px #e9c98e25,inset 0 1px 0 #ffffff25}
+ .actions #boost.active{background:#947446b0}
+ .touch-help{text-align:center;font-size:9px;line-height:1.6;letter-spacing:.3px;color:#c3cfdf88;pointer-events:none;padding:0 12px}
+ header{align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 8px max(18px,env(safe-area-inset-left))}
+ .tools button{width:38px;height:38px;flex-shrink:0}
+ .brand{font-size:10px;flex-shrink:0}.brand small{font-size:6px;max-width:none}
+ #stats{font-size:10px;line-height:1.4;max-width:45%}
+ #toast{top:64px;max-width:min(380px,60%)}
+ #portal-hint{bottom:calc(var(--control-height,124px) + 8px);font-size:9px;padding:7px 12px;z-index:2}
+ .desktop-help{display:none}.mobile-help{display:block;font-size:10px!important;line-height:1.7!important}
+ #overlay{padding:12px;touch-action:pan-y}
+ .card{width:min(620px,100%);max-height:100%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+ #choices canvas{touch-action:pan-y}
+}
+@media(pointer:coarse) and (max-height:430px), (max-width:700px) and (max-height:430px){
+ .card{padding:12px 22px}.card h1{font-size:32px;margin:9px 0}.card h1 br{display:none}
+ .card>p{font-size:11px;line-height:1.5;margin:9px 0}
+ #choices{margin:8px 0;gap:12px}#choices canvas{width:62px;height:62px}
+ #choices button{padding:7px 10px}#choices strong{font-size:13px;margin:2px 0 5px}#choices small{font-size:9px}
+ .card .mobile-help{font-size:9px!important;line-height:1.5!important;margin:10px 0 0}
+ .eyebrow{font-size:8px}
+}
+@media(max-width:640px){.touch-help{font-size:8px;padding:0 6px}.brand small{display:none}#stats{font-size:9px}.tools button{width:35px;height:35px}header{gap:8px}}
