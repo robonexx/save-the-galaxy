@@ -33,17 +33,17 @@ window.GameAudio=(()=>{
  }
  function tick(){
   if(!context||!master)return;
-  const audible=sound&&['playing','victory','transition','transport'].includes(state);
-  master.gain.setTargetAtTime(audible?.65:0,context.currentTime,.08);
+  const audible=sound&&(['playing','victory','transition','transport'].includes(state)||(state==='won'&&mode==='rescue'));
+  master.gain.setTargetAtTime(audible?(mode==='rescue'?.48:.65):0,context.currentTime,.08);
   if(!audible){next=context.currentTime+.08;return;}
-  const wi=Math.min(2,Math.floor(stage/3)),seconds=60/(boss?140:112+wi*9)/2;
+  const wi=mode==='rescue'?0:Math.min(2,Math.floor(stage/3)),combat=!!boss||mode==='fight',seconds=60/(mode==='rescue'?104:combat?140:112+wi*9)/2;
   if(next<context.currentTime)next=context.currentTime+.03;
   while(next<context.currentTime+.24){
    const melody=melodies[wi],index=beat%melody.length;
-   if(!boss||beat%2===0)note(melody[index],next,seconds*.83,boss?.015:.021,'triangle');
+   if(!combat||beat%2===0)note(melody[index],next,seconds*.83,combat?.015:.021,'triangle');
    if(beat%4===0)note(basses[wi][Math.floor(beat/8)%4],next,seconds*2.9,.023,'triangle');
    if(beat%2===1)note(basses[wi][Math.floor(beat/8)%4]+19,next,seconds*.65,.009,'square');
-   if(boss&&beat%4===0){note(31,next,.16,.035,'sine',.5);hiss(next,.045,.011,4200);}
+   if(combat&&beat%4===0){note(31,next,.16,.035,'sine',.5);hiss(next,.045,.011,4200);}
    beat++;next+=seconds;
   }
  }
@@ -64,5 +64,7 @@ window.GameAudio=(()=>{
  }
  function morph(kind){if(!sound||!ensure())return;const now=context.currentTime+.01,steps=kind==='fight'?[60,67,72,76]:[60,64,67,72,79];steps.forEach((n,i)=>note(n,now+i*.09,.2,.022,'triangle'));hiss(now,.3,.013,1800);}
  function victory(){if(!sound||!ensure())return;const now=context.currentTime+.015;[72,76,79,84].forEach((n,i)=>note(n,now+i*.13,i===3?.48:.23,.04,'triangle'));}
- return {start,morph,victory,laugh:kind=>voice(kind),roar:kind=>voice(kind,true),setMuted:()=>{if(master)master.gain.setTargetAtTime(sound?.65:0,context.currentTime,.05);},captureStream:()=>{if(!ensure())return null;const destination=context.createMediaStreamDestination();master.connect(destination);return destination.stream;},inspect:()=>({enabled:!!context,musicRunning:timer!==null,state:context?.state??'unavailable',events:[...events],original:true})};
+ function rescue(){if(!sound||!ensure())return;beat=0;next=context.currentTime+.03;const now=context.currentTime+.015;[60,64,67,72,76,79,84,79].forEach((n,i)=>note(n,now+i*.18,i>5?.6:.27,.029,'triangle'));}
+ function strike(type,blocked=false,parried=false){if(!sound||!ensure())return;const now=context.currentTime+.004;if(parried){note(91,now,.16,.024,'triangle');note(98,now+.03,.16,.018,'sine');}else if(blocked){hiss(now,.08,.029,2400);note(62,now,.07,.014,'triangle');}else{hiss(now,type==='kick'?.13:.09,.039,type==='kick'?540:850);note(type==='kick'?37:43,now,.11,.045,'sine',.55);}}
+ return {start,morph,victory,rescue,strike,laugh:kind=>voice(kind),roar:kind=>voice(kind,true),setMuted:()=>{if(master)master.gain.setTargetAtTime(sound?.65:0,context.currentTime,.05);},captureStream:()=>{if(!ensure())return null;const destination=context.createMediaStreamDestination();master.connect(destination);return destination.stream;},inspect:()=>({enabled:!!context,musicRunning:timer!==null,state:context?.state??'unavailable',events:[...events],original:true})};
 })();

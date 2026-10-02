@@ -90,3 +90,12 @@ header{padding:18px 24px;background:linear-gradient(#091326ba,transparent);align
  #touch[data-mode="fight"] .actions #jump{padding-bottom:8px}
 }
 @media(max-width:480px){#touch[data-mode="fight"] .touch-help{display:none}}
+
+#touch[data-mode="rescue"]{display:none!important}
+#overlay[data-ending="true"]{align-items:start;padding-top:clamp(78px,15dvh,125px);background:linear-gradient(#10162518,transparent 65%);backdrop-filter:none;pointer-events:none}
+#overlay[data-ending="true"] .card{width:min(420px,92%);padding:20px 24px;pointer-events:auto;background:linear-gradient(145deg,#28374ce8,#15243bed);box-shadow:0 16px 50px #162c4426}
+#overlay[data-ending="true"] h1{font-size:38px;letter-spacing:-1px;margin:10px 0}
+#overlay[data-ending="true"] .help,#overlay[data-ending="true"] .eyebrow{display:none}
+#overlay[data-ending="true"] .card p{margin:10px 0 15px}
+@media(max-height:450px){#overlay[data-ending="true"]{padding-top:70px}#overlay[data-ending="true"] .card{padding:10px 22px;width:min(430px,75%)}#overlay[data-ending="true"] h1{font-size:27px;margin:4px 0}#overlay[data-ending="true"] .card p{font-size:11px;margin:5px 0 9px}#overlay[data-ending="true"] #continue{padding:9px 20px}}
+@media(max-height:360px){#overlay[data-ending="true"]{padding-top:62px}#overlay[data-ending="true"] .card{padding:8px 18px;width:min(440px,80%)}#overlay[data-ending="true"] h1{font-size:22px;margin:3px 0}#overlay[data-ending="true"] .card p{font-size:10px;line-height:1.35;margin:3px 0 6px}#overlay[data-ending="true"] #continue{font-size:12px;padding:7px 18px}}

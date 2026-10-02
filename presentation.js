@@ -19,7 +19,7 @@ function drawBossMeter(){
  const color=boss.kind==='destroyer'?'#b6db73':boss.kind==='nebula'?'#ccb1f0':'#eeb36d';
  rounded(bx,y,bw,5,3,'#242235db');rounded(bx,y,bw*boss.hp/boss.maxHp,5,3,color);
  ctx.font=`${Math.min(12,d.w/33)}px system-ui`;ctx.fillStyle='#f8dcaf';ctx.textAlign='center';ctx.fillText(boss.name.toUpperCase(),d.w/2,y-7);
- const phase=bossIndex===0?`ROUND ${bossPhase}/2`:bossIndex===2?(bossPhase===1?'BREAK THE SHELL':'FINAL ROUND'):'THE VEIL';
+ const phase=bossIndex===0?`ROUND ${bossPhase}/2`:bossIndex===2?(bossPhase===1?'BREAK THE SHELL':'BREAK ITS ARMOR'):'THE VEIL';
  ctx.font='10px system-ui';ctx.fillText(`${boss.maxHp-boss.hp} / ${boss.maxHp} HEAD STOMPS · ${phase}`,d.w/2,y+20);ctx.restore();
 }
 function drawHeroMagic(p,type){

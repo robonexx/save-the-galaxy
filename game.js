@@ -41,7 +41,7 @@ function resize(){
  if(player)camera=clamp(player.x-viewW*.38+player.face*45,0,Math.max(0,world.width-viewW));
  previousCamera=camera;
  ctx.setTransform(dpr*scale,0,0,dpr*scale,0,0);
- if(mode==='fight')window.FightMode?.resize();else if(mode!=='platform')window.ArcadeModes?.resize();
+ if(mode==='fight')window.FightMode?.resize();else if(mode==='rescue')window.RescueStory?.resize?.();else if(mode!=='platform')window.ArcadeModes?.resize();
 }addEventListener('resize',resize);addEventListener('orientationchange',resize);
 document.addEventListener('fullscreenchange',resize);resize();
 function tone(freq,duration=.08){if(!sound)return;try{
@@ -111,6 +111,7 @@ function loadLevel(){
 function start(type){boss=null;bossVictory=null;bossPhase=0;bossIndex=0;doubleJumpUnlocked=false;transition=null;hero=type;stage=0;score=0;player=null;resetBoost();loadLevel();state='playing';$('#overlay').hidden=true;tone(550);window.GameAudio?.start();}
 document.querySelectorAll('[data-hero]').forEach(b=>b.onclick=()=>start(b.dataset.hero));
 function showOverlay(title,msg,choices=false){
+ delete $('#overlay').dataset.ending;
  $('#overlay').hidden=false;$('h1').innerHTML=title;$('#message').textContent=msg;$('#choices').hidden=!choices;$('#continue').hidden=choices;
 }
 function pause(){
@@ -197,6 +198,7 @@ for(const id of ['jump','pulse','boost','guard']){
 }stick.oncontextmenu=e=>e.preventDefault();
 const platformActions={jump:$('#jump').innerHTML,pulse:$('#pulse').innerHTML,boost:$('#boost').innerHTML};
 function configureModeControls(){
+ const wasRescue=$('#touch').dataset.mode==='rescue';
  const space=['asteroid','flight'].includes(mode),fight=mode==='fight';
  $('#touch').dataset.mode=mode;
  $('#pulse').hidden=space;
@@ -204,10 +206,12 @@ function configureModeControls(){
  for(const id of ['jump','pulse','boost'])$('#'+id).innerHTML=platformActions[id];
  if(space){$('#jump').innerHTML='✦<small>FIRE</small>';$('#boost').innerHTML='»<small>DASH</small>';}
  if(fight){$('#pulse').innerHTML='<svg viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M7 23v-8l-2-3 3-3 3 2V7h4v4-5h4v5-4h4v9l-5 7Z"/></svg><small>PUNCH</small>';$('#boost').innerHTML='<svg viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="m9 3 7 7-4 7 10-1 5 3-2 4-15 1-5-5 4-9-4-4Z"/></svg><small>KICK</small>';}
- $('#jump').setAttribute('aria-label',space?'Fire light; drag to aim in asteroid battles':'Jump; hold for a higher jump');
+ $('#jump').setAttribute('aria-label',space?'Fire light; drag to aim in asteroid battles':fight?'Jump; press an attack in the air for an aerial strike':'Jump; hold for a higher jump');
  $('#pulse').setAttribute('aria-label',fight?'Punch':'Magic: shoot a light attack');
  $('#boost').setAttribute('aria-label',space?'Dash; brief shield, three second recharge':fight?'Kick':'Hold to boost; slide to Jump for a boost jump');
- $('.touch-help').innerHTML=space?(mode==='asteroid'?'Move in any direction<br>FIRE · drag to aim':'Fly past obstacles<br>FIRE + DASH'):fight?'Tap to strike<br>Hold GUARD':'Hold BOOST<br>slide to JUMP ↗';
+ $('#guard').setAttribute('aria-label','Hold to block; time a new press to parry');
+ $('.touch-help').innerHTML=space?(mode==='asteroid'?'Move in any direction<br>FIRE · drag to aim':'Fly past obstacles<br>FIRE + DASH'):fight?'PUNCH → KICK combo<br>Tap GUARD to parry':'Hold BOOST<br>slide to JUMP ↗';
+ if(mode==='rescue'||wasRescue)resize();
 }
 function hidePortal(){nearbyPortal=null;$('#portal-hint').hidden=true;}
 function updatePortal(){
@@ -404,8 +408,8 @@ function updateEnemies(dt,oldY){
 }
 function refreshHUD(){
  if(!player){$('#stats').textContent='';return;}
- if(mode!=='platform'){$('#stats').textContent=mode==='fight'?window.FightMode?.hud()||'':window.ArcadeModes?.hud()||'';return;}
- const phaseLabel=bossIndex===0?`ROUND ${bossPhase}/2`:bossIndex===2?(bossPhase===1?'BREAK THE SHELL':'FINAL ROUND'):'THE VEIL';
+ if(mode!=='platform'){$('#stats').textContent=mode==='fight'?window.FightMode?.hud()||'':mode==='rescue'?window.RescueStory?.hud()||'':window.ArcadeModes?.hud()||'';return;}
+ const phaseLabel=bossIndex===0?`ROUND ${bossPhase}/2`:bossIndex===2?(bossPhase===1?'BREAK THE SHELL':'BREAK ITS ARMOR'):'THE VEIL';
  const key=world.id==='boss'?`BOSS · STOMPS ${boss.maxHp-boss.hp}/${boss.maxHp} · ${phaseLabel}`:world.id==='bonus'?(world.key?.campaignKey?(world.key.got?'WORLD KEY FOUND':'FIND WORLD KEY'):'SECRET PATH'):world.key.got?'KEY FOUND':world.key.location==='bonus'?(hero==='moon'?'KEY IN THE SKY ↑':'KEY UNDERGROUND ↓'):'FIND KEY';
  const route=innerWidth<500?(world.id==='bonus'?world.name:world.id==='boss'?BOSS_DEFS[bossIndex].name:`W${Math.floor(stage/3)+1} · ${stage%3+1}/3`):world.name;
  const status=player.mistTrap>0?`TAP MAGIC / X · ${Math.floor(player.mistTaps)}/6`:player.poisonTime>0?'POISON':player.sticky?'SLIME':player.boosting?'» BOOST':'';
@@ -415,10 +419,11 @@ function finishStage(){
  beginTransition(stage%3===2?{type:'boss',index:Math.floor(stage/3),phase:1}:{type:'level',stage:stage+1});
 }
 function transitionCaption(destination){
- if(destination.type==='fight')return {title:'WORLD 1 · BOSS DUEL',detail:'Spider Ninja. Two rounds: PUNCH, KICK, JUMP and hold GUARD. J / K / Space / L on keyboard.'};
+ if(destination.type==='fight')return destination.encounter==='destroyer'?{title:'THE DESTROYER TRANSFORMS',detail:'The shell becomes a spider fighter. Win two rounds to free your friend. Jump over silk; guard against green shurikens.'}:{title:'WORLD 1 · BOSS DUEL',detail:'Spider Ninja. Two rounds: PUNCH → KICK combos, aerial strikes, and timed GUARD. J / K / Space / L on keyboard.'};
  if(destination.type==='arcade')return destination.kind==='flight'?{title:'STARFLIGHT · 3 WAVES',detail:'A horizontal space battle. Move freely, hold FIRE and use DASH.'}:{title:`ASTEROID STORM ${(destination.round||0)+1} / 3`,detail:'Free flight at the edge of the universe. Move in any direction and hold FIRE.'};
- if(destination.type==='boss')return {title:`WORLD ${destination.index+1} · BOSS BATTLE`,detail:`${BOSS_DEFS[destination.index].name}. ${destination.index===2&&destination.phase===2?'Final round: eight head stomps will save the universe.':destination.index===0&&destination.phase===2?'Round 2. Double jump unlocked! Release JUMP, then press again in the air.':'Jump above its head and stomp. Watch the attack warnings.'}`};
+ if(destination.type==='boss')return {title:`WORLD ${destination.index+1} · BOSS BATTLE`,detail:`${BOSS_DEFS[destination.index].name}. ${destination.index===2&&destination.phase===2?'Eight head stomps break the armor. Your friend is still trapped.':destination.index===0&&destination.phase===2?'Round 2. Double jump unlocked! Release JUMP, then press again in the air.':'Jump above its head and stomp. Watch the attack warnings.'}`};
  if(destination.type==='level')return {title:`WORLD ${Math.floor(destination.stage/3)+1} · TRAIL ${destination.stage%3+1}/3`,detail:STAGE_LAYOUTS[destination.stage].hint};
+ if(destination.type==='rescue')return {title:'THE SPIDER IS DEFEATED',detail:`The cage is unlocked. Go and bring ${hero==='sun'?'the Moon':'the Sun'} home!`};
  return {title:'THE UNIVERSE IS SAVED',detail:'The Destroyer is defeated. Your light shines again.'};
 }
 function beginTransition(destination){
@@ -438,8 +443,17 @@ function completeTransition(){
  if(destination.type==='level'){stage=destination.stage;player.hp=3;loadLevel();state='playing';beginArrival('gate');}
  else if(destination.type==='boss'){startBoss(destination.phase,destination.index);if(state==='playing')beginArrival('gate');}
  else if(destination.type==='arcade')startArcade(destination.kind,destination.round||0);
- else if(destination.type==='fight')startFight();
- else{state='won';boss=null;clearInput();resetBoost();showOverlay('Together<br><em>again</em>',`${hero==='sun'?'The Moon':'The Sun'} is free. Nine trails, three worlds, and the Destroyer defeated. The universe has its light back.`);$('#continue').textContent='Play again →';}
+ else if(destination.type==='fight')startFight({encounter:destination.encounter||'dojo',destination:destination.destination});
+ else if(destination.type==='rescue'||destination.type==='win')startRescue();
+}
+function startRescue(){
+ prepareStyle('rescue','Together Again','forest');world.day=true;world.environment='sunrise';
+ window.RescueStory.start();refreshHUD();window.GameAudio?.rescue?.();
+}
+function finishRescue(){
+ state='won';clearInput();resetBoost();boss=null;
+ showOverlay('Together <em>again</em>',`${hero==='sun'?'The Moon':'The Sun'} is free. Two final rounds won. The universe shines again.`);
+ $('#overlay').dataset.ending='true';$('#continue').textContent='Play again →';refreshHUD();
 }
 function finishBossVictory(){
  const victory=bossVictory;bossVictory=null;beginTransition(victory.destination);
@@ -515,10 +529,15 @@ function update(dt){
   moveJourneyPlayer(sampleTransport(transportJourney),dt);if(transportTime<=0)finishPortal();return;
  }
  if(state!=='playing')return;
+ if(mode==='rescue'){if(window.RescueStory.update(dt))finishRescue();refreshHUD();return;}
  if(bossIntro&&mode==='platform'){
   bossIntro.age+=dt;player.inv=2;player.vx=player.vy=0;
-  const progress=bossIntro.age/bossIntro.duration,pan=progress<.65?journeyEase(progress/.25):1-journeyEase((progress-.65)/.35);
-  camera=bossIntro.fromCamera+(bossIntro.focusCamera-bossIntro.fromCamera)*pan;
+  const progress=bossIntro.age/bossIntro.duration;
+  if(bossIntro.captiveCamera!==undefined){
+   if(progress<.4)camera=bossIntro.fromCamera+(bossIntro.captiveCamera-bossIntro.fromCamera)*journeyEase(progress/.24);
+   else if(progress<.72)camera=bossIntro.captiveCamera+(bossIntro.focusCamera-bossIntro.captiveCamera)*journeyEase((progress-.4)/.18);
+   else camera=bossIntro.focusCamera+(bossIntro.fromCamera-bossIntro.focusCamera)*journeyEase((progress-.72)/.28);
+  }else{const pan=progress<.65?journeyEase(progress/.25):1-journeyEase((progress-.65)/.35);camera=bossIntro.fromCamera+(bossIntro.focusCamera-bossIntro.fromCamera)*pan;}
   if(bossIntro.age>=bossIntro.duration){bossIntro=null;clearInput();notify(world.subtitle);}
   return;
  }
@@ -606,7 +625,7 @@ function update(dt){
 function frame(stamp){const delta=Math.min((stamp-last)/1000||0,.05);last=stamp;acc+=delta;while(acc>=1/120){update(1/120);acc-=1/120;}renderAlpha=clamp(acc*120,0,1);renderTime=previousTime+(time-previousTime)*renderAlpha;if(window.drawGame)drawGame();requestAnimationFrame(frame);}
 // Start after all drawing modules are loaded, even on a slow local file read.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(frame),{once:true});else requestAnimationFrame(frame);
-window.EclipseGame=Object.freeze({snapshot:()=>({state,mode,hero,stage,worldIndex:Math.floor(stage/3),localStage:stage%3,difficulty:world.difficulty,theme:world.theme,area:world.id,score,key:world.key?.got??false,camera,player:player?{...player}:null,enemies:enemies.filter(e=>e.alive).length,stars:stars.filter(s=>!s.got).length,boss:boss?{...boss}:null,bossPhase,bossIndex,doubleJumpUnlocked,bossVictory:bossVictory?{...bossVictory}:null,bossIntro:bossIntro?{...bossIntro}:null,environment:world.environment,portals:world.portals.map(q=>({...q})),movingPlatforms:terrain.filter(t=>t.motion).map(t=>({x:t.x,y:t.y,w:t.w,dx:t.dx,dy:t.dy})),arcade:mode==='asteroid'||mode==='flight'?window.ArcadeModes?.snapshot():null,fight:mode==='fight'?window.FightMode?.snapshot():null,transition:transition?{...transition}:null,transport:transportJourney?{...transportJourney}:null,arrival:arrivalFX?{...arrivalFX}:null,fogHazards:fogHazards.map(f=>({...f})),tentacleStrikes:tentacleStrikes.map(f=>({...f})),portal:nearbyPortal?.kind??null,input:{...input},layout:{...mobileLayout}})});
+window.EclipseGame=Object.freeze({snapshot:()=>({state,mode,hero,stage,worldIndex:Math.floor(stage/3),localStage:stage%3,difficulty:world.difficulty,theme:world.theme,area:world.id,score,key:world.key?.got??false,camera,player:player?{...player}:null,enemies:enemies.filter(e=>e.alive).length,stars:stars.filter(s=>!s.got).length,boss:boss?{...boss}:null,bossPhase,bossIndex,doubleJumpUnlocked,bossVictory:bossVictory?{...bossVictory}:null,bossIntro:bossIntro?{...bossIntro}:null,environment:world.environment,captive:world.captive?{...world.captive,hero:hero==='sun'?'moon':'sun'}:null,rescue:mode==='rescue'?window.RescueStory?.snapshot():null,portals:world.portals.map(q=>({...q})),movingPlatforms:terrain.filter(t=>t.motion).map(t=>({x:t.x,y:t.y,w:t.w,dx:t.dx,dy:t.dy})),arcade:mode==='asteroid'||mode==='flight'?window.ArcadeModes?.snapshot():null,fight:mode==='fight'?window.FightMode?.snapshot():null,transition:transition?{...transition}:null,transport:transportJourney?{...transportJourney}:null,arrival:arrivalFX?{...arrivalFX}:null,fogHazards:fogHazards.map(f=>({...f})),tentacleStrikes:tentacleStrikes.map(f=>({...f})),portal:nearbyPortal?.kind??null,input:{...input},layout:{...mobileLayout}})});
 
 function startBoss(phase=1,index=Math.floor(stage/3)){
  mode='platform';configureModeControls();
@@ -616,7 +635,8 @@ function startBoss(phase=1,index=Math.floor(stage/3)){
  if(index>0||phase===2)doubleJumpUnlocked=true;
  boss={kind:def.kind,name:def.name,x:800,y:520-def.h,prevX:800,prevY:520-def.h,w:def.w,h:def.h,baseHeight:def.h,maxHp:health,hp:health,inv:0,action:'rest',clock:1.5,index:0,dir:-1,facing:0,turnBlend:0,vx:0,vy:0,ground:def.kind!=='nebula',
   motionPhase:0,walkPhase:0,actionAge:0,warnProgress:0,chargeBlend:0,slamImpact:0,recoil:0,fireFlash:0,fireCount:0,fireIndex:0,fireClock:0};
- bossIntro={age:0,duration:2.6,fromCamera:camera,focusCamera:boss.x+boss.w>camera+viewW-90?clamp(boss.x+boss.w*.5-viewW*.6,0,Math.max(0,world.width-viewW)):camera,title:`WORLD ${index+1} · BOSS BATTLE`,detail:`${def.name}${index===0?` · round ${phase}/2`:index===2&&phase===2?' · FINAL ROUND':''}. ${world.subtitle}`};
+ bossIntro={age:0,duration:index===2?5.2:2.6,fromCamera:camera,focusCamera:boss.x+boss.w>camera+viewW-90?clamp(boss.x+boss.w*.5-viewW*.6,0,Math.max(0,world.width-viewW)):camera,title:`WORLD ${index+1} · BOSS BATTLE`,detail:`${def.name}${index===0?` · round ${phase}/2`:index===2&&phase===2?' · BREAK THE ARMOR':''}. ${world.subtitle}`};
+ if(index===2){world.captive={x:1375,y:498,scale:.95};bossIntro.captiveCamera=clamp(world.captive.x-viewW*.55,0,Math.max(0,world.width-viewW));bossIntro.captiveHero=hero==='sun'?'moon':'sun';}
  resetRenderPose();state='playing';$('#overlay').hidden=true;clearInput();resetBoost();$('#toast').hidden=true;refreshHUD();window.GameAudio?.laugh(def.kind);
 }
 function bossProjectile(x,y,vx,vy,w=26,h=26,life=4,kind='fire'){
@@ -625,14 +645,14 @@ function bossProjectile(x,y,vx,vy,w=26,h=26,life=4,kind='fire'){
 function bossDefeated(){
  if(state!=='playing'||bossVictory)return;
  hostileShots=[];fogHazards=[];tentacleStrikes=[];score+=50*(bossIndex+1);
- let destination,title,detail,swallow=false;
+ let destination,title,detail,swallow=false,transform=false;
  if(bossIndex===0&&bossPhase===1){doubleJumpUnlocked=true;destination={type:'boss',index:0,phase:2};title='ROUND 1 CLEARED · 4 / 4';detail='Double jump unlocked. Next: the Warden’s Inferno round.';}
  else if(bossIndex===0){destination={type:'fight'};title='CINDER WARDEN DEFEATED';detail='Next: Spider Ninja — a karate duel in two rounds.';}
  else if(bossIndex===1){destination={type:'arcade',kind:'flight'};title='NEBULA PHANTOM DEFEATED';detail='Next: Starflight — a horizontal shooter with three waves.';}
  else if(bossPhase===1){destination={type:'arcade',kind:'asteroid',round:0};title='THE DESTROYER’S SHELL BREAKS';detail='It opens a galaxy rift. Survive three asteroid storms!';swallow=true;}
- else{destination={type:'win'};title='THE DESTROYER IS DEFEATED';detail='Eight final stomps. The universe has its light back.';}
- boss.hp=0;boss.action='rest';boss.recoil=1;bossIntro=null;bossVictory={age:0,duration:3,destination,title,detail,swallow};state='victory';
- clearInput();resetBoost();hidePortal();player.vx=0;player.vy=-330;player.ground=false;$('#toast').hidden=true;toastTimer=0;burst(boss.x+boss.w/2,boss.y,'#ffe7a6',46);window.GameAudio?.victory?.();refreshHUD();
+ else{destination={type:'fight',encounter:'destroyer',destination:{type:'rescue'}};title='THE ARMOR SHATTERS';detail='The Destroyer transforms into a spider fighter. Two rounds stand between you and the cage.';transform=true;}
+ boss.hp=0;boss.action='rest';boss.recoil=1;bossIntro=null;bossVictory={age:0,duration:transform?3.6:3,destination,title,detail,swallow,transform};state='victory';
+ clearInput();resetBoost();hidePortal();player.vx=0;player.vy=-330;player.ground=false;$('#toast').hidden=true;toastTimer=0;burst(boss.x+boss.w/2,boss.y,'#ffe7a6',46);if(transform){window.GameAudio?.morph?.('fight');window.GameAudio?.roar?.('destroyer');}else window.GameAudio?.victory?.();refreshHUD();
 }
 function prepareStyle(kind,name,theme){
  clearInput();mode=kind;configureModeControls();boss=null;bossVictory=bossIntro=null;transportJourney=null;pendingPortal=null;arrivalFX=null;transition=null;mainArea=bonusArea=null;particles=[];
@@ -641,7 +661,7 @@ function prepareStyle(kind,name,theme){
  window.GameAudio?.morph?.(kind);
 }
 function startArcade(kind,round=0){prepareStyle(kind,kind==='asteroid'?'The Shattered Galaxy':'Starflight through the Veil','nebula');window.ArcadeModes.start(kind,round);refreshHUD();}
-function startFight(){prepareStyle('fight','The Spider Ninja','void');window.FightMode.start();refreshHUD();}
+function startFight(options={}){const final=options.encounter==='destroyer';prepareStyle('fight',final?'The Destroyer · Spider Fighter':'The Spider Ninja',final?'inferno':'void');window.FightMode.start(options);refreshHUD();if(final)window.GameAudio?.roar('destroyer');}
 function updateBoss(dt,oldY){
  const b=boss,p=player,startX=b.x,hard=bossPhase===2||b.hp<=b.maxHp/2;
  b.inv=Math.max(0,b.inv-dt);b.clock-=dt;b.actionAge=(b.actionAge||0)+dt;b.motionPhase=(b.motionPhase||0)+dt;

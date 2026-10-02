@@ -123,7 +123,7 @@ function renderBody(body,alpha){
  return p;
 }
 window.drawGame=function(){
- if(mode!=='platform'){if(mode==='fight')window.FightMode?.render();else window.ArcadeModes?.render();return;}
+ if(mode!=='platform'){if(mode==='fight')window.FightMode?.render();else if(mode==='rescue')window.RescueStory?.render();else window.ArcadeModes?.render();return;}
  const savedCamera=camera,savedTime=time;
  const alpha=typeof renderAlpha==='number'?clamp(renderAlpha,0,1):1;
  if(typeof previousCamera==='number')camera=visualLerp(previousCamera,camera,alpha);
@@ -138,8 +138,10 @@ window.drawGame=function(){
   for(let x=t.x+80;x<t.x+t.w-10;x+=spacing,treeIndex++)if(visible(x))tree(x,t.y,Math.floor(x/3)*3+treeIndex%3);
  }
  if(world.theme==='void')drawUnderworld();
+ if(world.id==='boss'&&world.captive)window.RescueStory?.drawPlatformCage({...world.captive,clock:time,speech:false});
  for(const t of terrain)if(t.x+t.w>camera-40&&t.x<camera+viewW+40){if(t.motion){drawMovingTrail(t,alpha);drawMovingPlatform(t,alpha);}else{platform(t);decorate(t);}}
  if(state==='menu'&&terrain.length===0)for(const [x,y,w] of world.ground)if(x+w>camera&&x<camera+viewW)platform({x,y,w,h:180,oneWay:false});
+ if(world.id==='boss'&&world.captive)window.RescueStory?.drawPlatformSpeech?.({...world.captive,clock:time});
  for(const s of stars)if(!s.got&&visible(s.x))drawStardust(s);
  for(const b of beacons)if(visible(b.x))drawBeacon(b);
  for(const item of powerups)if(!item.got&&visible(item.x)){const yy=item.y+14+Math.sin(time*2.6)*3;glow(item.x+14,yy,33,'#fff0a940');crystal(item.x+14,yy,14,'#ffdfa0');star(item.x+14,yy,6,'#fff8db');}
@@ -149,7 +151,13 @@ window.drawGame=function(){
  for(const q of tentacleStrikes)drawTentacleStrike(q);
  for(const q of world.portals)if(visible(q.x))drawPortal(q);
  for(const e of enemies)if(e.alive&&visible(e.x))drawEnemy(renderBody(e,alpha));
- if(boss){ctx.save();if(bossVictory&&!bossVictory.swallow)ctx.globalAlpha*=1-journeyEase((bossVictory.age-.35)/1.4);drawBoss(renderBody(boss,alpha));ctx.restore();drawBossAim();}
+ if(boss){ctx.save();
+  if(bossVictory?.transform){const morph=journeyEase(bossVictory.age/bossVictory.duration/.68),cx=boss.x+boss.w/2,foot=boss.y+boss.h;ctx.translate(cx,foot);ctx.scale(1-morph*.7,1-morph*.65);ctx.translate(-cx,-foot);ctx.globalAlpha*=1-morph;}
+  else if(bossVictory&&!bossVictory.swallow)ctx.globalAlpha*=1-journeyEase((bossVictory.age-.35)/1.4);
+  drawBoss(renderBody(boss,alpha));ctx.restore();
+  if(bossVictory?.transform)window.FightEffects?.drawTransformation(boss,bossVictory.age/bossVictory.duration);
+  drawBossAim();
+ }
  for(const s of shots)if(visible(s.x))drawLightShot(renderBody(s,alpha));
  for(const s of hostileShots)if(visible(s.x))drawHostileShot(renderBody(s,alpha));
  if(world.key&&world.key.location!=='bonus'&&visible(world.key.x))drawKey(world.key);if(world.exit&&visible(world.exit))gate();
@@ -188,8 +196,8 @@ window.drawGame=function(){
  if(state==='transport'&&transportJourney){const p=transportJourney.age/transportJourney.duration,f=journeyEase((p-.84)/.15);ctx.fillStyle=`rgba(13,15,36,${f})`;ctx.fillRect(0,0,viewW,viewH);}
  if(state==='transition')drawTransitionEffect();
  if(screenFade>0){ctx.fillStyle=`rgba(13,15,36,${screenFade/.32})`;ctx.fillRect(0,0,viewW,viewH);}
- if(state==='victory'&&bossVictory)drawSceneCaption(bossVictory.title,bossVictory.detail,journeyEase(bossVictory.age/.18));
- if(state==='playing'&&bossIntro)drawSceneCaption(bossIntro.title,bossIntro.detail,Math.min(1,bossIntro.age/.18));
+ if(state==='victory'&&bossVictory){const captionAlpha=journeyEase(bossVictory.age/.18)*(bossVictory.transform?1-journeyEase((bossVictory.age-.85)/.4):1);if(captionAlpha>0)drawSceneCaption(bossVictory.title,bossVictory.detail,captionAlpha);}
+ if(state==='playing'&&bossIntro){if(bossIntro.captiveHero)drawCaptiveBossIntro();else drawSceneCaption(bossIntro.title,bossIntro.detail,Math.min(1,bossIntro.age/.18));}
  if(state==='won'){glow(viewW/2,400,170,'#f6dd8925');character(viewW/2-30,510,'sun',1,{size:1.3,ground:true});character(viewW/2+30,510,'moon',-1,{size:1.3,ground:true});}
  }finally{camera=savedCamera;time=savedTime;}
 };
@@ -266,6 +274,13 @@ function drawBossAim(){
 }
 function drawSceneCaption(title,detail,alpha=1){
  if(!window.ModeFX)return;ctx.save();const dpr=Math.min(devicePixelRatio||1,2);ctx.setTransform(dpr,0,0,dpr,0,0);ModeFX.caption(title,detail,ModeFX.measure(),alpha);ctx.restore();
+}
+function drawCaptiveBossIntro(){
+ const d=ModeFX.measure(),dpr=Math.min(devicePixelRatio||1,2),a=bossIntro.age/bossIntro.duration,captive=bossIntro.captiveHero==='moon'?'THE MOON':'THE SUN';
+ ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.globalAlpha=Math.min(1,bossIntro.age/.2);ctx.textAlign='center';
+ const y=d.top+42,w=Math.min(440,d.w-24),title=a<.4?`${captive} IS TRAPPED!`:'WORLD 3 · THE DESTROYER';
+ rounded((d.w-w)/2,y-17,w,49,9,'#101625e8');ctx.fillStyle='#fff0ce';ctx.font=`bold ${Math.min(17,d.w/24)}px system-ui`;ctx.fillText(title,d.w/2,y);
+ ctx.font=`${Math.min(11,d.w/36)}px system-ui`;ctx.fillStyle='#d9dfed';ctx.fillText(a<.4?'Defeat the spider to open the cage.':bossPhase===1?'Break its shell · 4 head stomps':'Break its armor · 8 head stomps',d.w/2,y+19);ctx.restore();
 }
 function drawTentacleStrike(s){
  const active=s.age>=s.warning&&s.age<s.warning+.24,alpha=clamp(s.life/.25,0,1);
