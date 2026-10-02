@@ -152,7 +152,7 @@ window.drawGame=function(){
  if(boss){ctx.save();if(bossVictory&&!bossVictory.swallow)ctx.globalAlpha*=1-journeyEase((bossVictory.age-.35)/1.4);drawBoss(renderBody(boss,alpha));ctx.restore();drawBossAim();}
  for(const s of shots)if(visible(s.x))drawLightShot(renderBody(s,alpha));
  for(const s of hostileShots)if(visible(s.x))drawHostileShot(renderBody(s,alpha));
- if(world.key&&visible(world.key.x))drawKey(world.key);if(world.exit&&visible(world.exit))gate();
+ if(world.key&&world.key.location!=='bonus'&&visible(world.key.x))drawKey(world.key);if(world.exit&&visible(world.exit))gate();
  if(state==='transport'&&pendingPortal)drawPortalTransitEffects(pendingPortal);
  if(state==='transition')drawJourneyAperture();
  if(arrivalFX)drawArrivalEffect();
@@ -183,12 +183,13 @@ window.drawGame=function(){
  if(state==='playing'&&world.id==='boss')drawBossMeter();
  if(state==='playing'&&world.id==='main'){
   const w=Math.min(190,viewW*.3),x=(viewW-w)/2;rounded(x,76,w,2,1,'#d3e6ee1a');rounded(x,76,w*clamp(player.x/world.width,0,1),2,1,'#ecd5a099');
-  if(!world.key.got&&world.key.x-camera>viewW-45){ctx.fillStyle=world.day?'#6e6447':'#e6d59c';ctx.font='10px system-ui';ctx.textAlign='right';ctx.fillText('KEY →',viewW-20,112);}
+  if(!world.key.got){const secret=world.key.location==='bonus',target=secret?world.portals[0].x:world.key.x;if(secret||target-camera>viewW-45||target-camera<20){const direction=target-camera<viewW*.35?'←':'→';ctx.fillStyle=world.day?'#6e6447':'#e6d59c';ctx.font='10px system-ui';ctx.textAlign='right';ctx.fillText(secret?`WORLD KEY ${direction} · ${hero==='moon'?'SKY ↑':'BELOW ↓'}`:`KEY ${direction}`,viewW-20,112);}}
  }
  if(state==='transport'&&transportJourney){const p=transportJourney.age/transportJourney.duration,f=journeyEase((p-.84)/.15);ctx.fillStyle=`rgba(13,15,36,${f})`;ctx.fillRect(0,0,viewW,viewH);}
  if(state==='transition')drawTransitionEffect();
  if(screenFade>0){ctx.fillStyle=`rgba(13,15,36,${screenFade/.32})`;ctx.fillRect(0,0,viewW,viewH);}
  if(state==='victory'&&bossVictory)drawSceneCaption(bossVictory.title,bossVictory.detail,journeyEase(bossVictory.age/.18));
+ if(state==='playing'&&bossIntro)drawSceneCaption(bossIntro.title,bossIntro.detail,Math.min(1,bossIntro.age/.18));
  if(state==='won'){glow(viewW/2,400,170,'#f6dd8925');character(viewW/2-30,510,'sun',1,{size:1.3,ground:true});character(viewW/2+30,510,'moon',-1,{size:1.3,ground:true});}
  }finally{camera=savedCamera;time=savedTime;}
 };

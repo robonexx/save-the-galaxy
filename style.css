@@ -73,3 +73,20 @@ header{padding:18px 24px;background:linear-gradient(#091326ba,transparent);align
 #touch[data-mode="asteroid"] .secondary,#touch[data-mode="flight"] .secondary{align-self:center}
 #touch[data-mode="fight"] #pulse{font-size:26px}
 #touch[data-mode="fight"] #pulse small{bottom:3px}
+
+/* Fighting gets a deliberate four-button layout; adventure controls keep theirs. */
+@media(pointer:coarse),(max-width:700px){
+ #touch[data-mode="fight"] .actions{display:grid;grid-template-columns:repeat(2,clamp(48px,13dvh,58px));grid-template-areas:"punch kick" "jump guard";gap:6px;align-items:center;align-self:center}
+ #touch[data-mode="fight"] .secondary{display:contents}
+ #touch[data-mode="fight"] .actions #pulse{grid-area:punch}
+ #touch[data-mode="fight"] .actions #boost{grid-area:kick}
+ #touch[data-mode="fight"] .actions #jump{grid-area:jump}
+ #touch[data-mode="fight"] .actions #guard{grid-area:guard}
+ #touch[data-mode="fight"] .actions button,#touch[data-mode="fight"] .actions #pulse,#touch[data-mode="fight"] .actions #boost,#touch[data-mode="fight"] .actions #jump{width:clamp(48px,13dvh,58px);height:clamp(48px,13dvh,58px);border-radius:17px;font-size:28px;margin:0}
+ #touch[data-mode="fight"] .actions button small{inset:auto 0 5px;font-size:7px;letter-spacing:1px}
+ #touch[data-mode="fight"] .actions button svg{width:27px;height:27px;margin-top:-9px;pointer-events:none}
+ #touch[data-mode="fight"] .actions #guard{color:#abdce8;border-color:#abdce880}
+ #touch[data-mode="fight"] .actions #boost{color:#eacfa4;border-color:#eacfa480}
+ #touch[data-mode="fight"] .actions #jump{padding-bottom:8px}
+}
+@media(max-width:480px){#touch[data-mode="fight"] .touch-help{display:none}}

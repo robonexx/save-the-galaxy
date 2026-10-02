@@ -12,10 +12,10 @@ let viewW=960,viewH=600,last=0,acc=0,pulseClock=0,jumpBuffer=0,coyote=0,portalCo
 let nearbyPortal=null,transportTime=0,pendingPortal=null,toastTimer=0,lockedGateTimer=0,previousGround=false;
 let boss=null,bossPhase=0,bossIndex=0,doubleJumpUnlocked=false;
 let transition=null,transportJourney=null,arrivalFX=null,screenFade=0,fogHazards=[],tentacleStrikes=[];
-let bossVictory=null;
+let bossVictory=null,bossIntro=null;
 let sound=true,audio,boostJump=false;
-const keys=new Set(),input={axis:0,vertical:0,jump:false,light:false,boost:false,down:false};
-const pointers={stick:null,jump:null,pulse:null,boost:null};
+const keys=new Set(),input={axis:0,vertical:0,jump:false,light:false,boost:false,down:false,guard:false};
+const pointers={stick:null,jump:null,pulse:null,boost:null,guard:null};
 const mobileLayout={blocked:false,width:0,height:0,playHeight:600,controlHeight:0};
 const approach=(from,to,rate,dt)=>from+(to-from)*(1-Math.exp(-rate*dt));
 function rememberPose(body){
@@ -54,12 +54,12 @@ function tone(freq,duration=.08){if(!sound)return;try{
 function notify(text){$('#toast').hidden=false;$('#toast').textContent=text;toastTimer=3.5;$('#toast').style.opacity=1;}
 function resetBoost(){input.boost=false;boostJump=false;$('#boost').classList.remove('active');$('#boost').setAttribute('aria-pressed','false');}
 function clearInput(){
- keys.clear();input.axis=input.vertical=0;input.jump=input.light=input.boost=input.down=false;boostJump=false;
+ keys.clear();input.axis=input.vertical=0;input.jump=input.light=input.boost=input.down=input.guard=false;boostJump=false;
  window.ArcadeModes?.clearAim();
  const captured=Object.entries(pointers);Object.keys(pointers).forEach(k=>pointers[k]=null);
  for(const [id,pointerId] of captured){const element=$('#'+id);if(pointerId!==null&&element.hasPointerCapture?.(pointerId))element.releasePointerCapture(pointerId);}
  $('#knob').style.transform='';
- document.querySelectorAll('#jump.active,#pulse.active,#boost.active').forEach(e=>e.classList.remove('active'));
+ document.querySelectorAll('#jump.active,#pulse.active,#boost.active,#guard.active').forEach(e=>e.classList.remove('active'));
  $('#boost').setAttribute('aria-pressed','false');
  $('#stick').classList.remove('boosting');jumpBuffer=0;
 }
@@ -98,7 +98,7 @@ function placePlayer(x,foot){
 }
 function loadLevel(){
  mode='platform';configureModeControls();
- boss=null;bossPhase=0;bossVictory=null;transportJourney=null;pendingPortal=null;arrivalFX=null;
+ boss=null;bossPhase=0;bossVictory=bossIntro=null;transportJourney=null;pendingPortal=null;arrivalFX=null;
  const hp=player?.hp??3,big=player?.big??false;
  buildArea(createWorld(hero,stage));mainArea=bonusArea=null;particles=[];
  player={x:80,y:458,w:32,h:62,vx:0,vy:0,face:1,facing:1,ground:true,hp,inv:1,big:false,visualSize:1,boosting:false,walkPhase:0,attack:0,knockback:0,autoJump:0,dropTimer:0,
@@ -106,7 +106,7 @@ function loadLevel(){
   trail:[],magicTrailClock:0,landingPulse:0,landingStrength:0,landingX:0,landingY:0,doubleJumpPulse:0,doubleJumpX:0,doubleJumpY:0,
   idleTime:0,idleExpression:'neutral',steering:false,mistTrap:0,mistTaps:0,mistImmune:0,poisonTime:0,poisonTick:0};
  if(big)setSize(true);placePlayer(80,520);
- pulseClock=0;portalCooldown=1;nearbyPortal=null;clearInput();notify(world.subtitle);refreshHUD();
+ pulseClock=0;portalCooldown=1;lockedGateTimer=0;nearbyPortal=null;clearInput();notify(world.subtitle);refreshHUD();
 }
 function start(type){boss=null;bossVictory=null;bossPhase=0;bossIndex=0;doubleJumpUnlocked=false;transition=null;hero=type;stage=0;score=0;player=null;resetBoost();loadLevel();state='playing';$('#overlay').hidden=true;tone(550);window.GameAudio?.start();}
 document.querySelectorAll('[data-hero]').forEach(b=>b.onclick=()=>start(b.dataset.hero));
@@ -119,7 +119,7 @@ function pause(){
 }
 $('#pause').onclick=pause;
 $('#continue').onclick=()=>{if(state==='paused')pause();else start(hero);};
-$('#menu').onclick=()=>{state='menu';mode='platform';configureModeControls();transition=null;bossVictory=null;transportJourney=null;pendingPortal=null;arrivalFX=null;screenFade=0;boss=null;bossPhase=0;player=null;buildArea(createWorld(hero,0));clearInput();resetBoost();hidePortal();showOverlay('Across the<br><em>Eclipse</em>','Nine different trails, moving bridges, a karate duel, a starflight and three asteroid storms. Choose your light.',true);};
+$('#menu').onclick=()=>{state='menu';mode='platform';configureModeControls();transition=null;bossVictory=bossIntro=null;transportJourney=null;pendingPortal=null;arrivalFX=null;screenFade=0;boss=null;bossPhase=0;player=null;buildArea(createWorld(hero,0));clearInput();resetBoost();hidePortal();showOverlay('Across the<br><em>Eclipse</em>','Nine different trails, moving bridges, a karate duel, a starflight and three asteroid storms. Choose your light.',true);};
 $('#sound').onclick=()=>{sound=!sound;$('#sound').textContent=sound?'♪':'∅';$('#sound').setAttribute('aria-label',sound?'Mute sound':'Enable sound');window.GameAudio?.setMuted();if(sound)window.GameAudio?.start();};
 async function enterFullscreen(){
  try{
@@ -173,11 +173,11 @@ function syncTouchActions(){
   if(pointers.pulse!==null&&!input.light)window.FightMode?.press('punch');
   if(pointers.boost!==null&&!input.boost)window.FightMode?.press('kick');
  }
- input.jump=jumping;input.light=pointers.pulse!==null;input.boost=pointers.boost!==null;
- for(const [id,on] of [['jump',input.jump],['pulse',input.light],['boost',input.boost]])$('#'+id).classList.toggle('active',on);
+ input.jump=jumping;input.light=pointers.pulse!==null;input.boost=pointers.boost!==null;input.guard=mode==='fight'&&pointers.guard!==null;
+ for(const [id,on] of [['jump',input.jump],['pulse',input.light],['boost',input.boost],['guard',input.guard]])$('#'+id).classList.toggle('active',on);
  $('#boost').setAttribute('aria-pressed',String(input.boost));$('#stick').classList.toggle('boosting',input.boost);
 }
-for(const id of ['jump','pulse','boost']){
+for(const id of ['jump','pulse','boost','guard']){
  const b=$('#'+id);
  b.onpointerdown=e=>{
   if(state!=='playing'||mobileLayout.blocked||pointers[id]!==null||e.button>0)return;
@@ -200,13 +200,14 @@ function configureModeControls(){
  const space=['asteroid','flight'].includes(mode),fight=mode==='fight';
  $('#touch').dataset.mode=mode;
  $('#pulse').hidden=space;
+ $('#guard').hidden=!fight;
  for(const id of ['jump','pulse','boost'])$('#'+id).innerHTML=platformActions[id];
  if(space){$('#jump').innerHTML='✦<small>FIRE</small>';$('#boost').innerHTML='»<small>DASH</small>';}
- if(fight){$('#pulse').innerHTML='✧<small>PUNCH</small>';$('#boost').innerHTML='↗<small>KICK</small>';}
+ if(fight){$('#pulse').innerHTML='<svg viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M7 23v-8l-2-3 3-3 3 2V7h4v4-5h4v5-4h4v9l-5 7Z"/></svg><small>PUNCH</small>';$('#boost').innerHTML='<svg viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="m9 3 7 7-4 7 10-1 5 3-2 4-15 1-5-5 4-9-4-4Z"/></svg><small>KICK</small>';}
  $('#jump').setAttribute('aria-label',space?'Fire light; drag to aim in asteroid battles':'Jump; hold for a higher jump');
  $('#pulse').setAttribute('aria-label',fight?'Punch':'Magic: shoot a light attack');
  $('#boost').setAttribute('aria-label',space?'Dash; brief shield, three second recharge':fight?'Kick':'Hold to boost; slide to Jump for a boost jump');
- $('.touch-help').innerHTML=space?(mode==='asteroid'?'Move in any direction<br>FIRE · drag to aim':'Fly past obstacles<br>FIRE + DASH'):fight?'Stick down: guard<br>PUNCH · KICK · JUMP':'Hold BOOST<br>slide to JUMP ↗';
+ $('.touch-help').innerHTML=space?(mode==='asteroid'?'Move in any direction<br>FIRE · drag to aim':'Fly past obstacles<br>FIRE + DASH'):fight?'Tap to strike<br>Hold GUARD':'Hold BOOST<br>slide to JUMP ↗';
 }
 function hidePortal(){nearbyPortal=null;$('#portal-hint').hidden=true;}
 function updatePortal(){
@@ -240,12 +241,13 @@ function finishPortal(){
   mainArea=packArea();if(bonusArea)unpackArea(bonusArea);else buildArea(createBonus(hero,stage));
   placePlayer(checkpoint.x,checkpoint.y);
  }else{
+  if(world.key?.campaignKey&&world.key.got)mainArea.world.key.got=true;
   bonusArea=packArea();unpackArea(mainArea);
   const x=mainArea.world.portals[0].returnX,g=world.ground.find(g=>x>=g[0]&&x+player.w<=g[0]+g[2]);
   checkpoint={x,y:g[1]};placePlayer(x,g[1]);
  }
  portalCooldown=1.3;pendingPortal=null;transportJourney=null;particles=[];state='playing';screenFade=.32;beginArrival(arrivalKind);
- notify(world.id==='bonus'?world.subtitle:'Back on the trail · find the level key');refreshHUD();
+ notify(world.id==='bonus'?world.subtitle:world.key.got?'WORLD KEY FOUND · continue to the star gate':world.key.location==='bonus'?'The world key is still on the secret path':'Back on the trail · find the level key');refreshHUD();
 }
 function journeyEase(t){t=clamp(t,0,1);return t*t*(3-2*t);}
 function sampleTransport(j,age=j.age){
@@ -404,7 +406,7 @@ function refreshHUD(){
  if(!player){$('#stats').textContent='';return;}
  if(mode!=='platform'){$('#stats').textContent=mode==='fight'?window.FightMode?.hud()||'':window.ArcadeModes?.hud()||'';return;}
  const phaseLabel=bossIndex===0?`ROUND ${bossPhase}/2`:bossIndex===2?(bossPhase===1?'BREAK THE SHELL':'FINAL ROUND'):'THE VEIL';
- const key=world.id==='boss'?`STOMPS ${boss.maxHp-boss.hp}/${boss.maxHp} · ${phaseLabel}`:world.id==='bonus'?'SECRET PATH':world.key.got?'KEY FOUND':'FIND KEY';
+ const key=world.id==='boss'?`BOSS · STOMPS ${boss.maxHp-boss.hp}/${boss.maxHp} · ${phaseLabel}`:world.id==='bonus'?(world.key?.campaignKey?(world.key.got?'WORLD KEY FOUND':'FIND WORLD KEY'):'SECRET PATH'):world.key.got?'KEY FOUND':world.key.location==='bonus'?(hero==='moon'?'KEY IN THE SKY ↑':'KEY UNDERGROUND ↓'):'FIND KEY';
  const route=innerWidth<500?(world.id==='bonus'?world.name:world.id==='boss'?BOSS_DEFS[bossIndex].name:`W${Math.floor(stage/3)+1} · ${stage%3+1}/3`):world.name;
  const status=player.mistTrap>0?`TAP MAGIC / X · ${Math.floor(player.mistTaps)}/6`:player.poisonTime>0?'POISON':player.sticky?'SLIME':player.boosting?'» BOOST':'';
  $('#stats').textContent=`${route} · ${key}\n✦ ${score}  ${'♥'.repeat(player.hp)}${'♡'.repeat(3-player.hp)}  ${player.big?'GIANT · ':''}${status}`;
@@ -413,9 +415,9 @@ function finishStage(){
  beginTransition(stage%3===2?{type:'boss',index:Math.floor(stage/3),phase:1}:{type:'level',stage:stage+1});
 }
 function transitionCaption(destination){
- if(destination.type==='fight')return {title:'KARATE DUEL · SPIDER NINJA',detail:'Two rounds. PUNCH, KICK, JUMP — hold down to guard.'};
+ if(destination.type==='fight')return {title:'WORLD 1 · BOSS DUEL',detail:'Spider Ninja. Two rounds: PUNCH, KICK, JUMP and hold GUARD. J / K / Space / L on keyboard.'};
  if(destination.type==='arcade')return destination.kind==='flight'?{title:'STARFLIGHT · 3 WAVES',detail:'A horizontal space battle. Move freely, hold FIRE and use DASH.'}:{title:`ASTEROID STORM ${(destination.round||0)+1} / 3`,detail:'Free flight at the edge of the universe. Move in any direction and hold FIRE.'};
- if(destination.type==='boss')return {title:destination.index===2&&destination.phase===2?'THE DESTROYER · LAST BATTLE':`${BOSS_DEFS[destination.index].name.toUpperCase()}${destination.index===0?` · ROUND ${destination.phase}/2`:''}`,detail:destination.index===2&&destination.phase===2?'The asteroid storms are over. Eight head stomps will save the universe.':destination.index===0&&destination.phase===2?'Double jump unlocked! Release JUMP, then press again in the air.':'A new guardian awaits. Jump above its head and stomp.'};
+ if(destination.type==='boss')return {title:`WORLD ${destination.index+1} · BOSS BATTLE`,detail:`${BOSS_DEFS[destination.index].name}. ${destination.index===2&&destination.phase===2?'Final round: eight head stomps will save the universe.':destination.index===0&&destination.phase===2?'Round 2. Double jump unlocked! Release JUMP, then press again in the air.':'Jump above its head and stomp. Watch the attack warnings.'}`};
  if(destination.type==='level')return {title:`WORLD ${Math.floor(destination.stage/3)+1} · TRAIL ${destination.stage%3+1}/3`,detail:STAGE_LAYOUTS[destination.stage].hint};
  return {title:'THE UNIVERSE IS SAVED',detail:'The Destroyer is defeated. Your light shines again.'};
 }
@@ -513,6 +515,13 @@ function update(dt){
   moveJourneyPlayer(sampleTransport(transportJourney),dt);if(transportTime<=0)finishPortal();return;
  }
  if(state!=='playing')return;
+ if(bossIntro&&mode==='platform'){
+  bossIntro.age+=dt;player.inv=2;player.vx=player.vy=0;
+  const progress=bossIntro.age/bossIntro.duration,pan=progress<.65?journeyEase(progress/.25):1-journeyEase((progress-.65)/.35);
+  camera=bossIntro.fromCamera+(bossIntro.focusCamera-bossIntro.fromCamera)*pan;
+  if(bossIntro.age>=bossIntro.duration){bossIntro=null;clearInput();notify(world.subtitle);}
+  return;
+ }
  if(mode==='fight'){window.FightMode.update(dt);refreshHUD();return;}
  if(mode!=='platform'){window.ArcadeModes.update(dt);refreshHUD();return;}
  updateTerrainMotion(dt);
@@ -584,11 +593,11 @@ function update(dt){
  for(const b of beacons)if(!b.active&&Math.abs(p.x-b.x)<45&&p.ground&&Math.abs(p.y+p.h-b.y)<5){
   b.active=true;checkpoint={x:b.x,y:b.y};p.hp=3;notify('Beacon lit · hearts restored');burst(b.x,b.y-65,'#8de6d1',20);
  }
- if(world.key&&!world.key.got&&overlap(p,world.key)){world.key.got=true;notify('Level key found · open the star gate');burst(world.key.x,world.key.y,'#ffe49a',26);tone(1200,.25);}
+ if(world.key&&world.key.location!=='bonus'&&!world.key.got&&overlap(p,world.key)){world.key.got=true;if(world.key.campaignKey&&mainArea)mainArea.world.key.got=true;notify(world.key.campaignKey?'WORLD KEY FOUND · return to the trail and open its star gate':'Level key found · open the star gate');burst(world.key.x,world.key.y,'#ffe49a',26);tone(1200,.25);}
  if(world.exit&&p.x+p.w>world.exit-10){
   if(world.key.got){finishStage();return;}
   p.x=world.exit-10-p.w;p.vx=0;
-  if(lockedGateTimer<=0){notify('The gate needs a key · follow the golden key marker');lockedGateTimer=4;}
+  if(lockedGateTimer<=0){notify(world.key.location==='bonus'?(hero==='moon'?'The world key is in the Aurora Sky · return to the cloud beam near the start':'The world key is in the Amethyst Cavern · return to the black hole near the start'):'The gate needs a key · follow the golden key marker');lockedGateTimer=4;}
  }
  updatePortal();
  const desired=clamp(p.x-viewW*.38+p.facing*45,0,Math.max(0,world.width-viewW));camera+=(desired-camera)*(1-Math.exp(-dt*7));
@@ -597,7 +606,7 @@ function update(dt){
 function frame(stamp){const delta=Math.min((stamp-last)/1000||0,.05);last=stamp;acc+=delta;while(acc>=1/120){update(1/120);acc-=1/120;}renderAlpha=clamp(acc*120,0,1);renderTime=previousTime+(time-previousTime)*renderAlpha;if(window.drawGame)drawGame();requestAnimationFrame(frame);}
 // Start after all drawing modules are loaded, even on a slow local file read.
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(frame),{once:true});else requestAnimationFrame(frame);
-window.EclipseGame=Object.freeze({snapshot:()=>({state,mode,hero,stage,worldIndex:Math.floor(stage/3),localStage:stage%3,difficulty:world.difficulty,theme:world.theme,area:world.id,score,key:world.key?.got??false,camera,player:player?{...player}:null,enemies:enemies.filter(e=>e.alive).length,stars:stars.filter(s=>!s.got).length,boss:boss?{...boss}:null,bossPhase,bossIndex,doubleJumpUnlocked,bossVictory:bossVictory?{...bossVictory}:null,movingPlatforms:terrain.filter(t=>t.motion).map(t=>({x:t.x,y:t.y,w:t.w,dx:t.dx,dy:t.dy})),arcade:mode==='asteroid'||mode==='flight'?window.ArcadeModes?.snapshot():null,fight:mode==='fight'?window.FightMode?.snapshot():null,transition:transition?{...transition}:null,transport:transportJourney?{...transportJourney}:null,arrival:arrivalFX?{...arrivalFX}:null,fogHazards:fogHazards.map(f=>({...f})),tentacleStrikes:tentacleStrikes.map(f=>({...f})),portal:nearbyPortal?.kind??null,input:{...input},layout:{...mobileLayout}})});
+window.EclipseGame=Object.freeze({snapshot:()=>({state,mode,hero,stage,worldIndex:Math.floor(stage/3),localStage:stage%3,difficulty:world.difficulty,theme:world.theme,area:world.id,score,key:world.key?.got??false,camera,player:player?{...player}:null,enemies:enemies.filter(e=>e.alive).length,stars:stars.filter(s=>!s.got).length,boss:boss?{...boss}:null,bossPhase,bossIndex,doubleJumpUnlocked,bossVictory:bossVictory?{...bossVictory}:null,bossIntro:bossIntro?{...bossIntro}:null,environment:world.environment,portals:world.portals.map(q=>({...q})),movingPlatforms:terrain.filter(t=>t.motion).map(t=>({x:t.x,y:t.y,w:t.w,dx:t.dx,dy:t.dy})),arcade:mode==='asteroid'||mode==='flight'?window.ArcadeModes?.snapshot():null,fight:mode==='fight'?window.FightMode?.snapshot():null,transition:transition?{...transition}:null,transport:transportJourney?{...transportJourney}:null,arrival:arrivalFX?{...arrivalFX}:null,fogHazards:fogHazards.map(f=>({...f})),tentacleStrikes:tentacleStrikes.map(f=>({...f})),portal:nearbyPortal?.kind??null,input:{...input},layout:{...mobileLayout}})});
 
 function startBoss(phase=1,index=Math.floor(stage/3)){
  mode='platform';configureModeControls();
@@ -607,7 +616,8 @@ function startBoss(phase=1,index=Math.floor(stage/3)){
  if(index>0||phase===2)doubleJumpUnlocked=true;
  boss={kind:def.kind,name:def.name,x:800,y:520-def.h,prevX:800,prevY:520-def.h,w:def.w,h:def.h,baseHeight:def.h,maxHp:health,hp:health,inv:0,action:'rest',clock:1.5,index:0,dir:-1,facing:0,turnBlend:0,vx:0,vy:0,ground:def.kind!=='nebula',
   motionPhase:0,walkPhase:0,actionAge:0,warnProgress:0,chargeBlend:0,slamImpact:0,recoil:0,fireFlash:0,fireCount:0,fireIndex:0,fireClock:0};
- resetRenderPose();state='playing';$('#overlay').hidden=true;clearInput();resetBoost();notify(world.subtitle);refreshHUD();window.GameAudio?.laugh(def.kind);
+ bossIntro={age:0,duration:2.6,fromCamera:camera,focusCamera:boss.x+boss.w>camera+viewW-90?clamp(boss.x+boss.w*.5-viewW*.6,0,Math.max(0,world.width-viewW)):camera,title:`WORLD ${index+1} · BOSS BATTLE`,detail:`${def.name}${index===0?` · round ${phase}/2`:index===2&&phase===2?' · FINAL ROUND':''}. ${world.subtitle}`};
+ resetRenderPose();state='playing';$('#overlay').hidden=true;clearInput();resetBoost();$('#toast').hidden=true;refreshHUD();window.GameAudio?.laugh(def.kind);
 }
 function bossProjectile(x,y,vx,vy,w=26,h=26,life=4,kind='fire'){
  hostileShots.push({x,y,prevX:x,prevY:y,vx,vy,w,h,life,fire:kind==='fire'||kind==='shockwave',kind});
@@ -621,11 +631,11 @@ function bossDefeated(){
  else if(bossIndex===1){destination={type:'arcade',kind:'flight'};title='NEBULA PHANTOM DEFEATED';detail='Next: Starflight — a horizontal shooter with three waves.';}
  else if(bossPhase===1){destination={type:'arcade',kind:'asteroid',round:0};title='THE DESTROYER’S SHELL BREAKS';detail='It opens a galaxy rift. Survive three asteroid storms!';swallow=true;}
  else{destination={type:'win'};title='THE DESTROYER IS DEFEATED';detail='Eight final stomps. The universe has its light back.';}
- boss.hp=0;boss.action='rest';boss.recoil=1;bossVictory={age:0,duration:2.1,destination,title,detail,swallow};state='victory';
+ boss.hp=0;boss.action='rest';boss.recoil=1;bossIntro=null;bossVictory={age:0,duration:3,destination,title,detail,swallow};state='victory';
  clearInput();resetBoost();hidePortal();player.vx=0;player.vy=-330;player.ground=false;$('#toast').hidden=true;toastTimer=0;burst(boss.x+boss.w/2,boss.y,'#ffe7a6',46);window.GameAudio?.victory?.();refreshHUD();
 }
 function prepareStyle(kind,name,theme){
- clearInput();mode=kind;configureModeControls();boss=null;bossVictory=null;transportJourney=null;pendingPortal=null;arrivalFX=null;transition=null;mainArea=bonusArea=null;particles=[];
+ clearInput();mode=kind;configureModeControls();boss=null;bossVictory=bossIntro=null;transportJourney=null;pendingPortal=null;arrivalFX=null;transition=null;mainArea=bonusArea=null;particles=[];
  buildArea({id:kind,theme,day:false,name,width:viewW,ground:[],platforms:[],enemies:[],hazards:[],powerups:[],checkpoints:[],portals:[],spawn:[90,520],key:null,exit:null,difficulty:7});
  setSize(false);player.hp=3;placePlayer(90,520);camera=previousCamera=0;state='playing';$('#overlay').hidden=true;hidePortal();$('#toast').hidden=true;$('#toast').style.opacity=0;toastTimer=0;
  window.GameAudio?.morph?.(kind);
