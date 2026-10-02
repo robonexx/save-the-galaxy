@@ -14,10 +14,13 @@ function drawBeacon(b){
  if(b.active)glow(b.x,b.y-53,45,'#a4efd839');crystal(b.x,b.y-53,7,color);line(b.x-10,b.y-62,b.x,b.y-71,'#789491',2);line(b.x,b.y-71,b.x+10,b.y-62,'#789491',2);
 }
 function drawBossMeter(){
- const bw=Math.min(250,viewW*.5),bx=(viewW-bw)/2;
+ const d=ModeFX.measure(),dpr=Math.min(devicePixelRatio||1,2),bw=Math.min(300,d.w-42),bx=(d.w-bw)/2,y=d.top+18;
+ ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
  const color=boss.kind==='destroyer'?'#b6db73':boss.kind==='nebula'?'#ccb1f0':'#eeb36d';
- rounded(bx,128,bw,5,3,'#242235a9');rounded(bx,128,bw*boss.hp/boss.maxHp,5,3,color);
- ctx.font='10px system-ui';ctx.fillStyle='#f8dcaf';ctx.textAlign='center';ctx.fillText(`${boss.name.toUpperCase()} · ${boss.hp}/${boss.maxHp}${doubleJumpUnlocked?' · DOUBLE JUMP':''}`,viewW/2,121);
+ rounded(bx,y,bw,5,3,'#242235db');rounded(bx,y,bw*boss.hp/boss.maxHp,5,3,color);
+ ctx.font=`${Math.min(12,d.w/33)}px system-ui`;ctx.fillStyle='#f8dcaf';ctx.textAlign='center';ctx.fillText(boss.name.toUpperCase(),d.w/2,y-7);
+ const phase=bossIndex===0?`ROUND ${bossPhase}/2`:bossIndex===2?(bossPhase===1?'BREAK THE SHELL':'FINAL ROUND'):'THE VEIL';
+ ctx.font='10px system-ui';ctx.fillText(`${boss.maxHp-boss.hp} / ${boss.maxHp} HEAD STOMPS · ${phase}`,d.w/2,y+20);ctx.restore();
 }
 function drawHeroMagic(p,type){
  const moon=type==='moon',color=moon?'#c9d9f7':'#ffdc97';
@@ -49,7 +52,7 @@ function drawHeroMagic(p,type){
 // Start choices only after their complete texture atlases have decoded.
 const heroChoices=[...document.querySelectorAll('[data-hero]')];
 heroChoices.forEach(button=>button.disabled=true);
-Promise.all([HeroSprites.loadingPromise,window.BossSprites?.loadingPromise??Promise.resolve({ready:true})]).then(results=>{
+Promise.all([HeroSprites.loadingPromise,window.BossSprites?.loadingPromise??Promise.resolve({ready:true}),window.FightMode?.loadingPromise??Promise.resolve(true)]).then(results=>{
  if(results.every(result=>result!==false&&result?.ready!==false)){
   portraits();heroChoices.forEach(button=>button.disabled=false);
  }else{

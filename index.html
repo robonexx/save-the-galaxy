@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Sun & Moon — Across the Eclipse</title><link rel="stylesheet" href="style.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Sun & Moon — Across the Eclipse</title><link rel="stylesheet" href="style.css?v=20261002-varied-trails"></head>
 <body><main id="game"><canvas id="canvas" aria-label="Sun and Moon platform adventure"></canvas>
 <header><div class="brand">SUN <span>&</span> MOON<small>ACROSS THE ECLIPSE</small></div><div id="stats" aria-live="off"></div><div class="tools"><button id="pause" aria-label="Pause">Ⅱ</button><button id="sound" aria-label="Mute sound">♪</button><button id="full" aria-label="Fullscreen"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button><button id="menu" aria-label="Choose character">⌂</button></div></header>
 <section id="overlay"><div class="card"><div class="eyebrow">TWO LIGHTS. TWO DIFFERENT WORLDS.</div><h1>Across the<br><em>Eclipse</em></h1><p id="message">Three worlds. Nine trails. Three formidable bosses.<br>Choose your light. Find the way home.</p><div id="choices"><button data-hero="sun"><canvas id="sun-portrait" width="180" height="180" aria-hidden="true"></canvas><strong>Be the Sun</strong><small>Night trails · hidden black holes</small></button><button data-hero="moon"><canvas id="moon-portrait" width="180" height="180" aria-hidden="true"></canvas><strong>Be the Moon</strong><small>Day trails · paths among the clouds</small></button></div><button id="continue" hidden>Continue journey →</button>
-<p class="help desktop-help">A/D or arrows · Space / W / ↑ to jump · X / J for magic.<br><b>Hold Shift to boost + jump higher and farther.</b><br>Jump into black holes or cloud beams. Walk into return portals.<br>Drop through: ↓ + jump · Mist trap: tap MAGIC / X six times.<br>Double jump unlocks after the Warden.</p>
-<p class="help mobile-help">Move with the stick · Hold JUMP to jump higher.<br><b>Hold BOOST, then slide to JUMP for a boost jump.</b><br>MAGIC shoots light. Tap it six times to escape a mist trap.</p>
+<p class="help desktop-help">A/D or arrows · Space / W / ↑ to jump · X / J for magic.<br><b>Hold Shift to boost + jump higher and farther.</b><br>Jump into black holes or cloud beams. Walk into return portals.<br>Space battles: move in all directions · Space / click to fire · Shift to dash.<br>Duels: J / X punch · K / Shift kick · ↓ guard.<br>Double jump unlocks after the Warden.</p>
+<p class="help mobile-help">Play upright or sideways · Move with the stick.<br><b>Hold BOOST, then slide to JUMP for a boost jump.</b><br>MAGIC shoots light. Buttons change for flying and fighting.</p>
 </div></section>
 <div id="toast" role="status"></div>
 <div id="portal-hint" hidden><span id="portal-label"></span></div>
@@ -16,12 +16,4 @@
   <button id="boost" aria-label="Hold to boost; slide to Jump for a boost jump" aria-pressed="false">»<small>BOOST</small></button>
  </div><button id="jump" aria-label="Jump; hold for a higher jump">↑<small>JUMP</small></button></div>
 </div>
-<section id="orientation" hidden aria-labelledby="orientation-title">
- <div class="orientation-card">
-  <svg class="rotate-phone" viewBox="0 0 120 100" width="120" height="100" fill="none" aria-hidden="true"><rect x="29" y="19" width="62" height="36" rx="7" stroke="#e9c48c" stroke-width="2"/><path d="M82 30v14M30 73c-12-18-9-41 7-56m-1 0-1 14m1-14H22M87 68H50m37 0-9-9m9 9-9 9" stroke="#b9c9e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <p class="eyebrow">SUN & MOON</p><h2 id="orientation-title">Turn your phone<br><em>sideways</em></h2>
-  <p>The adventure plays in landscape.<br>Your journey waits while you rotate.</p>
-  <button id="orientation-full">Play fullscreen ↗</button>
- </div>
-</section>
-</main><script src="levels.js"></script><script src="game.js"></script><script src="art.js"></script><script src="assets/hero-manifest.js"></script><script src="hero-art.js"></script><script src="world-art.js"></script><script src="assets/boss-manifest.js"></script><script src="enemy-art.js"></script><script src="audio.js"></script><script src="presentation.js"></script></body></html>
+</main><script src="levels.js?v=20261002-varied-trails"></script><script src="game.js?v=20261002-varied-trails"></script><script src="art.js?v=20261002-varied-trails"></script><script src="assets/hero-manifest.js?v=20261002-varied-trails"></script><script src="hero-art.js?v=20261002-varied-trails"></script><script src="world-art.js?v=20261002-varied-trails"></script><script src="assets/boss-manifest.js?v=20261002-varied-trails"></script><script src="enemy-art.js?v=20261002-varied-trails"></script><script src="arcade-modes.js?v=20261002-varied-trails"></script><script src="assets/fight-manifest.js?v=20261002-varied-trails"></script><script src="fight-mode.js?v=20261002-varied-trails"></script><script src="audio.js?v=20261002-varied-trails"></script><script src="presentation.js?v=20261002-varied-trails"></script></body></html>

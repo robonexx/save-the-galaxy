@@ -86,7 +86,8 @@
    const frames=actionFrames(record,'warn_'+b.next,'profile',actionFrames(record,'warn','profile',[5]));
    return frames[Math.min(frames.length-1,Math.floor((b.warnProgress || 0)*frames.length))];
   }
-  if(action==='smash')return frameAt(actionFrames(record,b.ground?'land':'air','profile',b.ground?[7]:[6]),age*5);
+  if(action==='smash'||action==='pounce')return frameAt(actionFrames(record,b.ground?'land':'air','profile',b.ground?[7]:[6]),age*5);
+  if(action==='orbit')return frameAt(actionFrames(record,'rest','profile',[1]),age*3);
   if(action==='rest'||action==='idle'){
    if(Math.abs(b.facing || 0)<.48)return frameAt(actionFrames(record,'rest','front',[0]),(b.motionPhase || 0)*.7);
    const views=record.config.actions?.rest;
@@ -532,7 +533,7 @@
   if(!drawBossRaster(b,pose))bossProjectedBody(b,pose);
   if (b.action === 'warn') {
    const tx = x, ty = b.y - 62;
-   const names={fire:b.kind==='nebula'?'VOID':b.kind==='destroyer'?'VENOM':'FLAME',blackhole:'VOID',mist:'SLOWING MIST',poison:'VENOM',dart:'SHARDS',tentacle:'TENTACLES',charge:'RUSH',smash:'SMASH'};
+   const names={fire:b.kind==='nebula'?'VOID':b.kind==='destroyer'?'VENOM':'FLAME',blackhole:'VOID',mist:'SLOWING MIST',poison:'VENOM',dart:'SHARDS',tentacle:'TENTACLES',charge:'RUSH',smash:'SMASH',orbit:'STAR ORBIT',pounce:'SPIDER LEAP'};
    const label=`${names[b.next] || 'ATTACK'} ${b.next==='smash'||b.next==='mist'?'↓':dir>0?'→':'←'}`;
    ctx.font = 'bold 11px system-ui';ctx.textAlign = 'center';
    const width=Math.max(86,ctx.measureText(label).width+20);
